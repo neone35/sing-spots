@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">SingSpots</string>
+    <string name="title_activity_main_maps">SingSpotsMap</string>
+</resources>
