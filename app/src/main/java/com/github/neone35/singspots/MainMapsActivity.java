@@ -11,12 +11,17 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.blankj.utilcode.util.ToastUtils;
+import com.github.neone35.singspots.models.PlacesItem;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.orhanobut.logger.AndroidLogAdapter;
+import com.orhanobut.logger.Logger;
+
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -29,6 +34,7 @@ public class MainMapsActivity extends AppCompatActivity implements OnMapReadyCal
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_maps);
+        Logger.addLogAdapter(new AndroidLogAdapter());
         ButterKnife.bind(this);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -55,7 +61,23 @@ public class MainMapsActivity extends AppCompatActivity implements OnMapReadyCal
         mMap = googleMap;
     }
 
-    // Menu icons are inflated just as they were with actionbar
+    private void fetchPlaces(String searchString) {
+        Logger.d("Fetch places is called");
+        PlacesSearchTask placesSearchTask = new PlacesSearchTask(this, new OnAsyncEventListener<List<PlacesItem>>() {
+            @Override
+            public void onSuccess(List<PlacesItem> placesItemList) {
+                Logger.d(placesItemList);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Logger.e(e.getMessage());
+            }
+        });
+        placesSearchTask.execute(searchString, null, null);
+    }
+
+    // Menu icons are inflated
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -75,7 +97,7 @@ public class MainMapsActivity extends AppCompatActivity implements OnMapReadyCal
             public boolean onQueryTextSubmit(String query) {
                 // Fetch the data remotely
                 ToastUtils.showShort(query);
-//                fetchBooks(query);
+                fetchPlaces(query);
                 // Reset SearchView
                 searchView.clearFocus();
                 searchView.setQuery("", false);

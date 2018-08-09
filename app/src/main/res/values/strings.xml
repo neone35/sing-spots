@@ -2,4 +2,6 @@
     <string name="app_name">SingSpots</string>
     <string name="title_activity_main_maps">SingSpotsMap</string>
     <string name="search_for_places">Search for places</string>
+    <string name="gettings_places">Getting places</string>
+    <string name="please_wait">Please wait&#8230;</string>
 </resources>
