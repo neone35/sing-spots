@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
+import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -26,6 +27,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.common.base.Splitter;
 import com.google.maps.android.ui.IconGenerator;
 import com.orhanobut.logger.AndroidLogAdapter;
 import com.orhanobut.logger.Logger;
@@ -39,7 +41,7 @@ public class MainMapsActivity extends AppCompatActivity implements OnMapReadyCal
 
     private GoogleMap mMap;
     public static final int REQUEST_LIMIT = 20;
-    public static final int YEAR_FROM = 20;
+    public static final int YEAR_FROM = 1990;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +75,44 @@ public class MainMapsActivity extends AppCompatActivity implements OnMapReadyCal
         mMap = googleMap;
     }
 
+    private LatLng getLatLong(Coordinates coords) {
+        float latitude = Float.valueOf(coords.getLatitude());
+        float longitude = Float.valueOf(coords.getLongitude());
+        return new LatLng(latitude, longitude);
+    }
+
+    private Marker generateMarker(LatLng latLng, String placeName, String beginYear) {
+        // Build an icon with place name
+        IconGenerator iconGenerator = new IconGenerator(MainMapsActivity.this);
+        iconGenerator.setStyle(IconGenerator.STYLE_RED);
+        Bitmap bitmap = iconGenerator.makeIcon(placeName + "\n" + beginYear);
+        BitmapDescriptor icon = BitmapDescriptorFactory.fromBitmap(bitmap);
+        // Build a marker
+        MarkerOptions markerOptions = new MarkerOptions()
+                .position(latLng)
+                .icon(icon);
+        return mMap.addMarker(markerOptions);
+    }
+
+    private LatLngBounds getMarkerBounds(List<Marker> markerList) {
+        LatLngBounds.Builder builder = new LatLngBounds.Builder();
+        for (Marker marker : markerList) {
+            builder.include(marker.getPosition());
+        }
+        return builder.build();
+    }
+
+    private int getBeginYear(String beginDate) {
+        // "2017-03"
+        List<String> dateSplitted = Splitter
+                .on("-")
+                .trimResults()
+                .splitToList(beginDate);
+        // "2017"
+        String yearString = dateSplitted.get(0);
+        return Integer.valueOf(yearString);
+    }
+
     private void fetchPlaces(String searchString) {
         Logger.d("Fetch places is called");
         PlacesSearchTask placesSearchTask = new PlacesSearchTask(this, new OnAsyncEventListener<List<PlacesItem>>() {
@@ -82,42 +122,33 @@ public class MainMapsActivity extends AppCompatActivity implements OnMapReadyCal
                 if (!placesItemList.isEmpty()) {
                     mMap.clear();
                     List<Marker> markerList = new ArrayList<>();
-                    int placesNum = placesItemList.size();
-                    for (int i = 0; i < placesNum; i++) {
-                        PlacesItem placesItem = placesItemList.get(i);
-                        // get place name
-                        String placeName = placesItem.getName();
-                        // get coordinates
-                        Coordinates coords = placesItem.getCoordinates();
-                        if (coords != null) {
-                            float latitude = Float.valueOf(coords.getLatitude());
-                            float longitude = Float.valueOf(coords.getLongitude());
-                            LatLng latLng = new LatLng(latitude, longitude);
-                            Logger.d(latLng);
-                            // Build an icon with place name
-                            IconGenerator iconGenerator = new IconGenerator(MainMapsActivity.this);
-                            iconGenerator.setStyle(IconGenerator.STYLE_RED);
-                            Bitmap bitmap = iconGenerator.makeIcon(placeName);
-                            BitmapDescriptor icon = BitmapDescriptorFactory.fromBitmap(bitmap);
-                            // Build a marker
-                            MarkerOptions markerOptions = new MarkerOptions()
-                                    .position(latLng)
-                                    .icon(icon);
-                            Marker placeMarker = mMap.addMarker(markerOptions);
-                            markerList.add(placeMarker);
-//                        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-                        } else {
-                            Logger.d("No coords received for place name " + placeName);
+                    for (PlacesItem placesItem : placesItemList) {
+                        String beginDate = placesItem.getLifeSpan().getBegin();
+                        if (beginDate != null) {
+                            int beginYear = getBeginYear(beginDate);
+                            if (beginYear >= YEAR_FROM) {
+//                                Logger.d("Begin date " + beginYear);
+                                // get place name
+                                String placeName = placesItem.getName();
+                                // get coordinates
+                                Coordinates coords = placesItem.getCoordinates();
+                                if (coords != null) {
+                                    LatLng latLng = getLatLong(coords);
+                                    Marker placeMarker = generateMarker(latLng, placeName, String.valueOf(beginYear));
+                                    markerList.add(placeMarker);
+                                    mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+                                } else {
+                                    Logger.d("No coords received for place name " + placeName);
+                                }
+                            } else {
+                                Logger.d("Place began before 1990");
+                            }
                         }
                     }
                     if (!markerList.isEmpty()) {
-                        LatLngBounds.Builder builder = new LatLngBounds.Builder();
-                        for (Marker marker : markerList) {
-                            builder.include(marker.getPosition());
-                        }
-                        LatLngBounds bounds = builder.build();
                         int padding = 0; // offset from edges of the map in pixels
-                        CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
+                        LatLngBounds latLngBounds = getMarkerBounds(markerList);
+                        CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(latLngBounds, padding);
                         mMap.animateCamera(cu);
                     } else {
                         ToastUtils.showShort("No spots with coordinates found");
