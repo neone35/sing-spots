@@ -1,9 +1,11 @@
 package com.github.neone35.singspots;
 
+import android.animation.ObjectAnimator;
 import android.app.SearchManager;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
 import android.util.Pair;
@@ -113,30 +115,42 @@ public class MainMapsActivity extends AppCompatActivity implements OnMapReadyCal
         return Integer.valueOf(yearString);
     }
 
+    private void removeMarkerAfterSeconds(Marker marker, int seconds) {
+        final Handler handler = new Handler();
+        handler.postDelayed(marker::remove,
+                seconds * 1000);
+    }
+
     private void fetchPlaces(String searchString) {
         Logger.d("Fetch places is called");
         PlacesSearchTask placesSearchTask = new PlacesSearchTask(this, new OnAsyncEventListener<List<PlacesItem>>() {
             @Override
             public void onSuccess(List<PlacesItem> placesItemList) {
-                Logger.d(placesItemList);
+                String emptyExplanation = null;
                 if (!placesItemList.isEmpty()) {
                     mMap.clear();
                     List<Marker> markerList = new ArrayList<>();
+                    // iterate over places
                     for (PlacesItem placesItem : placesItemList) {
                         String beginDate = placesItem.getLifeSpan().getBegin();
+                        // check if place has specified begin date
                         if (beginDate != null) {
                             int beginYear = getBeginYear(beginDate);
+                            // narrow to places after YEAR_FROM
                             if (beginYear >= YEAR_FROM) {
-//                                Logger.d("Begin date " + beginYear);
                                 // get place name
                                 String placeName = placesItem.getName();
                                 // get coordinates
                                 Coordinates coords = placesItem.getCoordinates();
+                                // check if place has specified coordinates
                                 if (coords != null) {
                                     LatLng latLng = getLatLong(coords);
                                     Marker placeMarker = generateMarker(latLng, placeName, String.valueOf(beginYear));
                                     markerList.add(placeMarker);
-                                    mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+                                    // move camera to single added marker
+                                    mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
+                                    // set removal timer
+                                    removeMarkerAfterSeconds(placeMarker, beginYear - YEAR_FROM);
                                 } else {
                                     Logger.d("No coords received for place name " + placeName);
                                 }
@@ -149,9 +163,10 @@ public class MainMapsActivity extends AppCompatActivity implements OnMapReadyCal
                         int padding = 0; // offset from edges of the map in pixels
                         LatLngBounds latLngBounds = getMarkerBounds(markerList);
                         CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(latLngBounds, padding);
+                        // move camera to fit all added markers
                         mMap.animateCamera(cu);
                     } else {
-                        ToastUtils.showShort("No spots with coordinates found");
+                        ToastUtils.showShort("No spots found");
                     }
                 } else {
                     ToastUtils.showShort("No spots found");
