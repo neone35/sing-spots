@@ -57,9 +57,9 @@ public class MainMapsActivity extends AppCompatActivity implements OnMapReadyCal
                 .findFragmentById(R.id.main_map);
         if (mapFragment != null) {
             mapFragment.getMapAsync(this);
+        } else {
+            ToastUtils.showShort("Map initialization failed");
         }
-
-//        setSupportActionBar(toolbar);
     }
 
 
@@ -126,9 +126,11 @@ public class MainMapsActivity extends AppCompatActivity implements OnMapReadyCal
         PlacesSearchTask placesSearchTask = new PlacesSearchTask(this, new OnAsyncEventListener<List<PlacesItem>>() {
             @Override
             public void onSuccess(List<PlacesItem> placesItemList) {
-                String emptyExplanation = null;
+                // check if response is not empty
                 if (!placesItemList.isEmpty()) {
+                    // remove all markers
                     mMap.clear();
+                    // create new empty marker list
                     List<Marker> markerList = new ArrayList<>();
                     // iterate over places
                     for (PlacesItem placesItem : placesItemList) {
@@ -152,13 +154,14 @@ public class MainMapsActivity extends AppCompatActivity implements OnMapReadyCal
                                     // set removal timer
                                     removeMarkerAfterSeconds(placeMarker, beginYear - YEAR_FROM);
                                 } else {
-                                    Logger.d("No coords received for place name " + placeName);
+                                    Logger.d("No coords found for " + placeName);
                                 }
                             } else {
                                 Logger.d("Place began before 1990");
                             }
                         }
                     }
+                    // check if markers exist
                     if (!markerList.isEmpty()) {
                         int padding = 0; // offset from edges of the map in pixels
                         LatLngBounds latLngBounds = getMarkerBounds(markerList);

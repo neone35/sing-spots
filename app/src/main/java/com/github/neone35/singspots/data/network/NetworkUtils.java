@@ -32,13 +32,14 @@ public class NetworkUtils {
                 // get number of results
                 int mResultNum = placesResponse.getCount();
                 // check if got more results than specified by limit
-                int pagesNum = mResultNum / REQUEST_LIMIT;
                 if (mResultNum > REQUEST_LIMIT) {
                     // do additional requests as pages
+                    int pagesNum = mResultNum / REQUEST_LIMIT;
                     for (int i = 0; i < pagesNum; i++) {
                         Call<PlacesResponse> retroPageCall = mbApiEndpointInterface.getPlaces(searchString, REQUEST_LIMIT, REQUEST_LIMIT * i);
                         PlacesResponse placesPageResponse = retroPageCall.execute().body();
                         if (placesPageResponse != null) {
+                            // return list of places
                             List<PlacesItem> placesItemPageList = placesPageResponse.getPlaces();
                             placesList.addAll(placesItemPageList);
                         }

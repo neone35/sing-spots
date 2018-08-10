@@ -12,7 +12,7 @@ This project was received as a task for Android Developer position. The exact ap
 - Every pin has a lifespan, meaning after it expires, pin should be removed from the map. Lifespan calculation: open_year - 1990 = lifespan_in_seconds. Example: 2017 - 1990 = 27s.
 
 ## Screenshots
-coming soon
+![Sing spots user interface](https://preview.ibb.co/dGDjMU/sing_spots_app.jpg[ "Sing spots user interface")
 
 ## What Did I Learn / Use?
 - Google Maps API
