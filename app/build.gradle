@@ -22,6 +22,12 @@ android {
     }
 }
 
+allprojects {
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+    }
+}
+
 ext {
     support_lib_v = '28.0.0-rc01'
     aac_v = '1.1.1'
@@ -37,11 +43,16 @@ dependencies {
 
     // GOOGLE PLAY SERVICES
     implementation 'com.google.android.gms:play-services-maps:15.0.1'
+    implementation 'com.google.maps.android:android-maps-utils:0.5+'
+
 
     // 3RD PARTY LIBRARIES
     implementation 'com.google.code.gson:gson:2.8.5' // parsing
     implementation "com.squareup.retrofit2:retrofit:$retrofit_v" // network calls
     implementation "com.squareup.retrofit2:converter-gson:$retrofit_v" // gson & retrofit
+    implementation 'com.squareup.okhttp3:logging-interceptor:3.11.0'
+    implementation 'com.facebook.stetho:stetho:1.5.0' //network debugging in chrome
+    implementation 'com.facebook.stetho:stetho-okhttp3:1.5.0' // stetho for OkHttp library
     implementation 'com.orhanobut:logger:2.2.0' // logging
     implementation 'com.blankj:utilcode:1.17.3' // helper functions
     implementation "com.jakewharton:butterknife:$butterknife_v" // R class binding

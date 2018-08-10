@@ -1,4 +1,4 @@
-package com.github.neone35.singspots.models;
+package com.github.neone35.singspots.data.models;
 
 import java.util.List;
 
